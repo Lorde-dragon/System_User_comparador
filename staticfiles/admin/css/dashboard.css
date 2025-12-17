@@ -1,0 +1,32 @@
+/* 🧱 Ajuste para evitar quebra e melhorar largura das colunas */
+.dashboard .module table {
+    table-layout: auto; /* deixa o navegador ajustar colunas conforme o conteúdo */
+    width: 100%; /* mantém responsivo */
+}
+
+.dashboard .module table th,
+.dashboard .module table td {
+    white-space: nowrap; /* impede quebra de linha */
+    vertical-align: middle;
+}
+
+/* Define larguras mínimas nas colunas problemáticas */
+.dashboard .module table th:nth-child(1),
+.dashboard .module table td:nth-child(1) {
+    min-width: 90px; /* Status */
+}
+
+.dashboard .module table th:nth-child(2),
+.dashboard .module table td:nth-child(2) {
+    min-width: 180px; /* Nome Usuário */
+}
+
+.dashboard .module table th:nth-child(3),
+.dashboard .module table td:nth-child(3) {
+    min-width: 220px; /* Nome Completo */
+}
+
+/* Permite rolagem horizontal se ultrapassar a tela */
+.dashboard .module {
+    overflow-x: auto;
+}
