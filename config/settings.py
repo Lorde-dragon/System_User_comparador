@@ -75,14 +75,6 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / "static"]
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# Integrações (env)
-BITRIX_URL = os.getenv("BITRIX_URL", "http://ti-system:5004/api/jdash/user_bitrix")
-PONTO_URL = os.getenv("PONTO_URL", "https://n8n.c-controll.com.br/webhook/bfc5361c-ffea-4292-9c89-f3dd3945ba31")
-PONTO_TOKEN = os.getenv("PONTO_TOKEN", "E1B1PHmIrgSCVJEw3N9aHOKT4BN5hygUlpih50bVOXm4wqKT")
-GESTTA_URL = os.getenv("GESTTA_URL", "http://ti-system:5005/api/jdash/user_gestta")
-DOMINIO_URL = os.getenv("DOMINIO_URL", "http://ti-system:5006/api/jdash/user_dominio")
-CCONTROLWEB_URL = os.getenv("CCONTROLWEB_URL", "http://ti-system:5007/api/jdash/user_ccontrolweb")
-
 REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "10"))
 REQUEST_RETRIES = int(os.getenv("REQUEST_RETRIES", "2"))
 

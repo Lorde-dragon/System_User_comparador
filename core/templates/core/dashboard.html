@@ -94,6 +94,7 @@
           <option value="gestta" {% if div_sel == 'gestta' %}selected{% endif %}>Gestta</option>
           <option value="dominio" {% if div_sel == 'dominio' %}selected{% endif %}>Domínio</option>
           <option value="web" {% if div_sel == 'web' %}selected{% endif %}>CControlWeb</option>
+          <option value="visao" {% if div_sel == 'visao' %}selected{% endif %}>Visão Lógica</option>
         </select>
       </div>
 
@@ -105,30 +106,42 @@
 
   <!-- Cards resumo -->
   <div class="row g-3 mb-4">
-    <div class="col-md-3">
+    <div class="col-12 col-sm-6 col-md-4 col-lg-2">
       <div class="card card-hover border-0 shadow-sm p-3 text-center">
         <div class="text-muted small">Divergências Ponto</div>
         <div class="fs-4 fw-bold text-danger">{{ cont_div.ponto }}</div>
       </div>
     </div>
-    <div class="col-md-3">
+
+    <div class="col-12 col-sm-6 col-md-4 col-lg-2">
       <div class="card card-hover border-0 shadow-sm p-3 text-center">
         <div class="text-muted small">Divergências Gestta</div>
         <div class="fs-4 fw-bold text-danger">{{ cont_div.gestta }}</div>
       </div>
     </div>
-    <div class="col-md-3">
+
+    <div class="col-12 col-sm-6 col-md-4 col-lg-2">
       <div class="card card-hover border-0 shadow-sm p-3 text-center">
         <div class="text-muted small">Divergências Domínio</div>
         <div class="fs-4 fw-bold text-danger">{{ cont_div.dominio }}</div>
       </div>
     </div>
-    <div class="col-md-3">
+
+    <div class="col-12 col-sm-6 col-md-4 col-lg-2">
       <div class="card card-hover border-0 shadow-sm p-3 text-center">
         <div class="text-muted small">Divergências Web</div>
         <div class="fs-4 fw-bold text-danger">{{ cont_div.web }}</div>
       </div>
     </div>
+
+    <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+      <div class="card card-hover border-0 shadow-sm p-3 text-center">
+        <div class="text-muted small">Divergências VL</div>
+        <div class="fs-4 fw-bold text-danger">{{ cont_div.visao }}</div>
+      </div>
+    </div>
+  </div>
+
 
     {% if sync_last %}
     <div class="col-12">
@@ -161,6 +174,7 @@
             <th class="text-center">Gestta</th>
             <th class="text-center">Domínio</th>
             <th class="text-center">Web</th>
+            <th class="text-center">Visao</th>
           </tr>
         </thead>
         <tbody>

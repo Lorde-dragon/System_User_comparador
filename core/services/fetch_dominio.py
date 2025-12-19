@@ -1,5 +1,9 @@
+import os
 import requests
+from dotenv import load_dotenv
 from core.models import DominioAccount
+
+load_dotenv()
 
 
 def fetch_dominio():
@@ -9,7 +13,7 @@ def fetch_dominio():
     Garante que apenas registros válidos sejam salvos e
     trata automaticamente erros e respostas vazias.
     """
-    url = "http://ti-system:5006/api/jdash/user_dominio"
+    url = os.getenv("DOMINIO_URL")
 
     try:
         response = requests.get(url, timeout=10)
@@ -55,8 +59,6 @@ def fetch_dominio():
             print(f"⚠️ Erro ao salvar registro {codigo} - {nome}: {e}")
 
         lidos += 1
-
-    print(f"✅ Domínio sincronizado — lidos: {lidos}, gravados: {gravados}, ignorados: {ignorados}")
 
     return {
         "lidos": lidos,

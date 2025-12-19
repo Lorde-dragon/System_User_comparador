@@ -76,6 +76,15 @@ class CcontrolWebUser(TimeStampedModel):
     def __str__(self):
         return f"{self.nome_completo} <{self.email}>"
 
+class VisaoLogicaUser(TimeStampedModel):
+    codigo_funcionario = models.CharField(max_length=50, unique=True)
+    nome_funcionario = models.CharField(max_length=255)
+    dep_funcionario = models.CharField(max_length=255)
+    fonte_raw = models.JSONField(default=dict, blank=True)
+
+    def __str__(self):
+        return f"{self.nome_funcionario}"
+
 
 # ======================================================
 # 🔹 MODELOS DE SINCRONIZAÇÃO (LOG DE EXECUÇÃO)
@@ -104,6 +113,7 @@ class SyncDetail(TimeStampedModel):
         ("GESTTA", "GESTTA"),
         ("DOMINIO", "DOMINIO"),
         ("CCONTROLWEB", "CCONTROLWEB"),
+        ("VISAOLOGICA", "VISAOLOGICA"),
     )
     run = models.ForeignKey(SyncRun, related_name="details", on_delete=models.CASCADE)
     fonte = models.CharField(max_length=20, choices=FONTE_CHOICES)

@@ -5,12 +5,13 @@ from django.db.models import Q, Count
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from .models import (
-    BitrixUser, PontoContact, GesttaUser, DominioAccount, CcontrolWebUser, SyncRun, SyncDetail
+    BitrixUser, PontoContact, GesttaUser, DominioAccount, CcontrolWebUser, VisaoLogicaUser, SyncRun, SyncDetail
 )
 import subprocess
 import sys
 from django.contrib.auth.models import User
 from django.contrib.admin.views.decorators import staff_member_required
+from django.db.models.functions import Lower
 
 def login_redirect(request):
     # apenas para garantir rota /login do urls global usa auth view
@@ -33,6 +34,7 @@ def _validacoes(u: BitrixUser):
         "gestta": (False, "sem verificação"),
         "dominio": (False, "sem verificação"),
         "web": (False, "sem verificação"),
+        "visao": (False, "sem verificação"),
     }
 
     email_b = _bitrix_email(u)
@@ -68,6 +70,13 @@ def _validacoes(u: BitrixUser):
     else:
         result["web"] = (CcontrolWebUser.objects.filter(email=email_b).exists(), "Web: e-mail não encontrado" if not CcontrolWebUser.objects.filter(email=email_b).exists() else "")
 
+    # Visão Lógica: nome deve existir em VisaoLogicaUser.nome_funcionario
+    if not u.user_local:
+        result["visao"] = (False, "BITRIX sem nome para conciliar")
+    else:
+        exists = VisaoLogicaUser.objects.filter(nome_funcionario=u.user_local).exists()
+        result["visao"] = (exists, "Visão Lógica: nome não encontrado" if not exists else "")
+
     return result
 
 @login_required
@@ -76,7 +85,7 @@ def dashboard(request):
     status = request.GET.get("status", "Ativo")  # padrão Ativo
     dept = request.GET.get("departamento") or ""
     q = request.GET.get("q") or ""
-    divergencias = request.GET.get("div")  # "ponto|gestta|dominio|web" opcional
+    divergencias = request.GET.get("div")  # "ponto|gestta|dominio|web|visao" opcional
 
     users = BitrixUser.objects.all()
 
@@ -119,7 +128,7 @@ def dashboard(request):
     )
 
     # contadores de divergências por fonte
-    cont = {"ponto":0,"gestta":0,"dominio":0,"web":0}
+    cont = {"ponto":0,"gestta":0,"dominio":0,"web":0,"visao":0}
     for u in BitrixUser.objects.filter(status="Ativo"):
         v = _validacoes(u)
         for k in cont.keys():
@@ -136,7 +145,7 @@ def dashboard(request):
         "div_sel": divergencias or "",
         "sync_last": SyncRun.objects.order_by("-created_at").first(),
         "cont_div": cont,
-        "fontes": ["ponto", "gestta", "dominio", "web"],  # para exibição dinâmica
+        "fontes": ["ponto", "gestta", "dominio", "web", "visao"],  # para exibição dinâmica
     }
 
     return render(request, "core/dashboard.html", context)
@@ -144,7 +153,6 @@ def dashboard(request):
 @user_passes_test(lambda u: u.is_staff)
 @staff_member_required
 def sync_manual(request):
-    # executa o comando management 'sync_all' de forma síncrona (MVP)
     if request.method == "POST":
         try:
             # roda no mesmo processo python

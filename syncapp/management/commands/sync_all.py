@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from core.models import (
-    BitrixUser, PontoContact, GesttaUser, DominioAccount, CcontrolWebUser,
+    BitrixUser, PontoContact, GesttaUser, DominioAccount, CcontrolWebUser, VisaoLogicaUser,
     SyncRun, SyncDetail
 )
 from core.services.fetch_bitrix import fetch_bitrix
@@ -9,11 +9,12 @@ from core.services.fetch_ponto import fetch_ponto
 from core.services.fetch_gestta import fetch_gestta
 from core.services.fetch_dominio import fetch_dominio
 from core.services.fetch_ccontrolweb import fetch_ccontrolweb
+from core.services.fetch_visaologica import fetch_visaologica
 import json
 
 
 class Command(BaseCommand):
-    help = "Baixa dados das APIs e grava no banco (ordem: Bitrix, Ponto, Gestta, Dominio, CControlWeb)."
+    help = "Baixa dados das APIs e grava no banco (ordem: Bitrix, Ponto, Gestta, Dominio, CControlWeb, Visão Lógica)."
 
     def handle(self, *args, **options):
         run = SyncRun.objects.create(status="running")
@@ -23,6 +24,7 @@ class Command(BaseCommand):
             self.sync_gestta(run)
             self.sync_dominio(run)
             self.sync_ccontrolweb(run)
+            self.sync_visaologica(run)
             run.status = "success"
             run.save()
             self.stdout.write(self.style.SUCCESS(f"✅ Sync concluído (run={run.id})"))
@@ -68,7 +70,7 @@ class Command(BaseCommand):
     # ==================================================
     @transaction.atomic
     def sync_ponto(self, run):
-        item = SyncDetail.objects.create(run=run, fonte="Ponto Mais")
+        item = SyncDetail.objects.create(run=run, fonte="PONTO")
         data = fetch_ponto()
         item.lidos = len(data)
         self._flush(PontoContact.objects)
@@ -110,8 +112,7 @@ class Command(BaseCommand):
     # ==================================================
     @transaction.atomic
     def sync_dominio(self, run):
-        print("🔄 Sincronizando Domínio...")
-
+        
         # fetch_dominio já executa o upsert no banco e retorna contagens
         res = fetch_dominio()
 
@@ -120,7 +121,7 @@ class Command(BaseCommand):
             lidos = int(res.get("lidos") or 0)
             gravados = int(res.get("gravados") or 0)
             ignorados = int(res.get("ignorados") or 0)
-            print(f"✅ DOMÍNIO - lidos: {lidos}, gravados: {gravados}, ignorados: {ignorados}")
+            print(f"✔ DOMÍNIO - {gravados} registros gravados")
             run.details.create(fonte="DOMINIO", lidos=lidos, gravados=gravados, ignorados=ignorados)
             return
 
@@ -156,7 +157,7 @@ class Command(BaseCommand):
             except Exception:
                 ignorados += 1
 
-        print(f"✅ DOMÍNIO - lidos: {lidos}, gravados: {gravados}, ignorados: {ignorados}")
+        print(f"✔ DOMÍNIO - {gravados} registros gravados")
         run.details.create(fonte="DOMINIO", lidos=lidos, gravados=gravados, ignorados=ignorados)
 
 
@@ -209,5 +210,38 @@ class Command(BaseCommand):
 
         item.gravados = gravados
         item.save()
-        print(f"✔ CCONTROLWEB - {gravados} registros gravados (deduplicado por email)")
+        print(f"✔ CCONTROLWEB - {gravados} registros gravados")
+
+    # ==================================================
+    # Visão Lógica
+    # ==================================================
+    @transaction.atomic
+    def sync_visaologica(self, run):
+        item = SyncDetail.objects.create(run=run, fonte="VISAOLOGICA")
+
+        data = fetch_visaologica()
+        item.lidos = len(data)
+
+        gravados = 0
+
+        for row in data:
+            codigo = str(row.get("CodigoFuncionario", "")).strip()
+            if not codigo:
+                continue
+
+            VisaoLogicaUser.objects.update_or_create(
+                codigo_funcionario=codigo,
+                defaults={
+                    "nome_funcionario": (row.get("NomeFuncionario") or "").strip(),
+                    "dep_funcionario": (row.get("DepFuncionario") or "").strip(),
+                    "fonte_raw": row,
+                }
+            )
+            gravados += 1
+
+        item.gravados = gravados
+        item.save()
+
+        print(f"✔ VISAOLOGICA - {gravados} registros gravados")
+
 
