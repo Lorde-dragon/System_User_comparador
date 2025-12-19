@@ -38,17 +38,12 @@ class BitrixUser(TimeStampedModel):
 
     
 class PontoContact(TimeStampedModel):
-    nome = models.CharField(max_length=255)
-    email = models.CharField(max_length=255)
+    nome_completo = models.CharField(max_length=255)
+    status_ponto = models.CharField(max_length=255)
     fonte_raw = models.JSONField(default=dict, blank=True)
 
-    class Meta:
-        unique_together = [("nome", "email")]
-        indexes = [models.Index(fields=["nome"]), models.Index(fields=["email"])]
-
     def __str__(self):
-        return f"{self.nome} <{self.email}>"
-
+        return f"{self.nome_completo} <{self.status_ponto}>"
 
 class GesttaUser(TimeStampedModel):
     name = models.CharField(max_length=255)

@@ -77,9 +77,9 @@ class Command(BaseCommand):
         gravados = 0
         for row in data:
             PontoContact.objects.create(
-                nome=row["nome"],
-                email=row["email"],
-                fonte_raw=row.get("raw", row),
+                status_ponto=(row.get("status_sigla") or "").strip(),
+                nome_completo=(row.get("nome_completo") or "").strip(),
+                fonte_raw=row,
             )
             gravados += 1
         item.gravados = gravados

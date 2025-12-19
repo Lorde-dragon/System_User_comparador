@@ -43,7 +43,7 @@ def _validacoes(u: BitrixUser):
     if not u.nome_completo:
         result["ponto"] = (False, "BITRIX sem nome para conciliar")
     else:
-        qs = PontoContact.objects.filter(nome=u.nome_completo)
+        qs = PontoContact.objects.filter(nome_completo=u.nome_completo)
         count = qs.count()
         if count == 1:
             result["ponto"] = (True, "")
