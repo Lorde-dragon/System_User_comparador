@@ -45,10 +45,13 @@
     <link icon rel="icon" type="image/png" href="{% static 'images/Icone.png' %}">
     <h3 class="fw-bold text-dark mb-0"><i class="bi bi-bar-chart-line text-warning me-2"></i>Comparador</h3>
 
-    <div class="d-flex gap-2">
-      <a href="{% url 'sync_manual' %}" class="btn btn-warning text-dark fw-semibold">
+    <div class="d-flex gap-3">
+      <a href="{% url 'core:sync_manual' %}" class="btn btn-warning text-dark fw-semibold">
         <i class="bi bi-arrow-repeat me-1"></i> Atualizar Dados
       </a>
+      <a href="{% url 'sincronizacao_user:index' %}" class="btn btn-primary fw-semibold">
+        <i class="bi bi-sync me-1"></i> Sincronização Usuários
+
       <a href="{% url 'admin:index' %}" class="btn btn-dark fw-semibold">
         <i class="bi bi-person-plus me-1"></i> Espaço Adm
       </a>

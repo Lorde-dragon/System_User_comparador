@@ -1,0 +1,344 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block content %}
+
+
+    
+
+<!-- Bootstrap + Icons (se já carrega no base, pode remover daqui) -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+<style>
+  .card-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 14px rgba(0,0,0,0.10);
+    transition: .2s ease;
+  }
+
+  .chip {
+    display:inline-flex;
+    align-items:center;
+    gap:.35rem;
+    padding:.35rem .6rem;
+    border-radius:999px;
+    font-size:.85rem;
+    font-weight:600;
+  }
+  .chip-ok { background:#e7f7ee; color:#0f5132; }
+  .chip-warn { background:#fff3cd; color:#664d03; }
+  .chip-bad { background:#f8d7da; color:#842029; }
+  .chip-info { background:#e7f1ff; color:#084298; }
+
+  .pulse-green { animation: pulse-green 2s infinite; }
+  .pulse-red { animation: pulse-red 2s infinite; }
+  @keyframes pulse-green {
+    0%, 100% { filter: drop-shadow(0 0 0 rgba(25,135,84,0)); }
+    50% { filter: drop-shadow(0 0 6px rgba(25,135,84,.35)); }
+  }
+  @keyframes pulse-red {
+    0%, 100% { filter: drop-shadow(0 0 0 rgba(220,53,69,0)); }
+    50% { filter: drop-shadow(0 0 6px rgba(220,53,69,.35)); }
+  }
+
+  .sticky-side {
+    position: sticky;
+    top: 16px;
+  }
+
+  .table thead th { white-space: nowrap; }
+  .text-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+</style>
+
+<div class="container-fluid mt-1">
+
+  <!-- Topo -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+      <h3 class="fw-bold text-dark mb-0">
+        <i class="bi bi-people-fill text-warning me-2"></i>Sincronização de Usuários (CPF Bitrix)
+      </h3>
+      <!-- <div class="text-muted">
+        Match <strong>exato</strong> por nome entre Ponto e Bitrix. Use “Atualizar base” para ver quem dá match e depois “Enviar ao Bitrix”.
+      </div>-->
+    </div>
+
+    <div class="d-flex gap-2">
+      <form action="{% url 'sincronizacao_user:sync_bases' %}" method="post" class="m-0">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-warning text-dark fw-semibold"
+                onclick="return confirm('Deseja atualizar os Dados?');">
+          <i class="bi bi-database-check me-1"></i> Atualizar Dados
+        </button>
+      </form>
+
+      <form action="{% url 'sincronizacao_user:run_sync' %}" method="post" class="m-0">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary fw-semibold"
+                onclick="return confirm('Tem certeza que deseja enviar atualizações ao Bitrix?');">
+          <i class="bi bi-send-check me-1"></i> Enviar ao Bitrix
+        </button>
+      </form>
+
+      <form action="{% url 'core:dashboard' %}" method="get" class="m-0">
+          <button type="submit" class="btn btn-warning text-dark fw-semibold">
+              <i class="bi bi-database-check me-1"></i> Dashboard
+          </button>
+      </form>
+
+
+      <a href="{% url 'admin:index' %}" class="btn btn-dark fw-semibold">
+        <i class="bi bi-gear me-1"></i> Admin
+      </a>
+    </div>
+  </div>
+
+  <!-- Mensagens Django -->
+  {% if messages %}
+    <div class="mb-3">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- Cards resumo (aparece se stats existir) -->
+  {% if stats %}
+  <div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-md-3">
+      <div class="card card-hover border-0 shadow-sm p-3 text-center">
+        <div class="text-muted small">Usuários Bitrix</div>
+        <div class="fs-4 fw-bold text-dark">{{ stats.total_bitrix }}</div>
+      </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-md-3">
+      <div class="card card-hover border-0 shadow-sm p-3 text-center">
+        <div class="text-muted small">Usuários Ponto</div>
+        <div class="fs-4 fw-bold text-dark">{{ stats.total_ponto }}</div>
+      </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-md-3">
+      <div class="card card-hover border-0 shadow-sm p-3 text-center">
+        <div class="text-muted small">Usuários Coincidente</div>
+        <div class="fs-4 fw-bold text-success">{{ stats.ok }}</div>
+      </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-md-3">
+      <div class="card card-hover border-0 shadow-sm p-3 text-center">
+        <div class="text-muted small">Problemas</div>
+        <div class="fs-4 fw-bold text-danger">{{ stats.problemas }}</div>
+        <div class="text-muted small">
+          {{ stats.sem_match }} Divergências • {{ stats.duplicado }} Duplicados
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="row g-3">
+    <!-- ESQUERDA: Checagem + filtros -->
+    <div class="col-12 col-xl-8">
+
+      <!-- Filtros (JS) -->
+      <div class="card shadow-sm border-0 p-4 mb-3 bg-light">
+        <h5 class="fw-bold text-secondary mb-3">
+          <i class="bi bi-funnel-fill text-warning me-2"></i>Filtros
+        </h5>
+
+        <div class="row g-3 align-items-end">
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Status da Checagem</label>
+            <select id="filterStatus" class="form-select">
+              <option value="">(todos)</option>
+              <option value="OK">Coincidentes</option>
+              <option value="SEM_MATCH">Divergêntes</option>
+              <option value="DUPLICADO">Duplicados</option>
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Pesquisar</label>
+            <input id="filterText" class="form-control" placeholder="digite para filtrar...">
+          </div>
+
+          <div class="col-md-2 d-grid">
+            <button id="btnClearFilters" class="btn btn-dark">
+              <i class="bi bi-eraser me-1"></i>Limpar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabela Checagem -->
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+          <h6 class="mb-0 fw-semibold">
+            <i class="bi bi-table me-2 text-warning"></i>Checagem de Coincidentes
+          </h6>
+
+          {% if checks %}
+            <span class="chip chip-info">
+              <i class="bi bi-list-check"></i> {{ checks|length }} registros
+            </span>
+          {% else %}
+            <span class="chip chip-info">
+              <i class="bi bi-info-circle"></i> Rode “Atualizar Dados”
+            </span>
+          {% endif %}
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0" id="checkTable">
+            <thead class="table-light">
+              <tr>
+                <th>Status</th>
+                <th>Nome</th>
+                <th class="text-mono">ID</th>
+                <th class="text-mono">CPF</th>
+                <th>Observação</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if checks %}
+                {% for item in checks %}
+                <tr data-status="{{ item.status }}">
+                  <td class="text-center" align-middle">
+                    {% if item.status == "OK" %}
+                      <i class="bi bi-check-circle-fill text-success pulse-green me-1"></i>
+                      <!--<span class="badge bg-success">Coincidentes</span>-->
+                    {% elif item.status == "DUPLICADO" %}
+                      <i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>
+                      <!--<span class="badge bg-warning text-dark">DUPLICADO</span>-->
+                    {% else %}
+                      <i class="bi bi-x-circle-fill text-danger pulse-red me-1"></i>
+                      <!--<span class="badge bg-danger">Divergêntes</span>-->
+                    {% endif %}
+                  </td>
+
+                  <td class="fw-semibold">{{ item.nome }}</td>
+                  <td class="text-mono">{{ item.id_bitrix }}</td>
+                  <td class="text-mono">{{ item.cpf|default:"—" }}</td>
+                  <td class="text-muted">{{ item.obs|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="5" class="text-center text-muted py-4">
+                    Nenhuma checagem disponível. Clique em <strong>“Atualizar Dados”</strong>.
+                  </td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- DIREITA: Painel de alterações (logs) -->
+    <div class="col-12 col-xl-4">
+      <div class="sticky-side">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 fw-semibold">
+              <i class="bi bi-lightning-charge-fill me-2"></i>Atualizados no Bitrix
+            </h6>
+            <span class="chip chip-info">
+              <i class="bi bi-clock-history"></i> Últimos 50
+            </span>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0 align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 150px;">Data/Hora</th>
+                  <th>Nome</th>
+                  <th class="text-mono" style="width: 110px;">ID</th>
+                  <th class="text-mono" style="width: 140px;">CPF</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for log in logs %}
+                <tr>
+                  <td class="text-nowrap">{{ log.data_atualizacao|date:"d/m/Y H:i" }}</td>
+                  <td class="fw-semibold">{{ log.nome }}</td>
+                  <td class="text-mono">{{ log.id_bitrix }}</td>
+                  <td class="text-mono"><span class="badge bg-dark">{{ log.cpf }}</span></td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="4" class="text-center text-muted py-4">
+                    Nenhuma atualização registrada ainda.
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card-footer bg-white">
+            <div class="text-muted small">
+              Dica: após clicar em <strong>“Enviar ao Bitrix”</strong>, as atualizações bem-sucedidas aparecem aqui.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  (function () {
+    const statusEl = document.getElementById("filterStatus");
+    const textEl = document.getElementById("filterText");
+    const clearBtn = document.getElementById("btnClearFilters");
+    const table = document.getElementById("checkTable");
+
+    if (!table) return;
+
+    function normalize(s) {
+      return (s || "").toString().toLowerCase();
+    }
+
+    function applyFilters() {
+      const status = statusEl ? statusEl.value : "";
+      const q = normalize(textEl ? textEl.value : "");
+
+      const rows = table.querySelectorAll("tbody tr");
+      rows.forEach(tr => {
+        // ignora linha "vazia"
+        if (!tr.dataset || !tr.dataset.status) return;
+
+        const rowStatus = tr.dataset.status;
+        const rowText = normalize(tr.innerText);
+
+        const okStatus = !status || rowStatus === status;
+        const okText = !q || rowText.includes(q);
+
+        tr.style.display = (okStatus && okText) ? "" : "none";
+      });
+    }
+
+    if (statusEl) statusEl.addEventListener("change", applyFilters);
+    if (textEl) textEl.addEventListener("input", applyFilters);
+    if (clearBtn) clearBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (statusEl) statusEl.value = "";
+      if (textEl) textEl.value = "";
+      applyFilters();
+    });
+
+    // aplica ao carregar
+    applyFilters();
+  })();
+</script>
+
+{% endblock %}

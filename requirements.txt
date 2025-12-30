@@ -3,3 +3,5 @@ python-dotenv==1.0.1
 requests==2.32.3
 waitress==3.0.2
 whitenoise==6.5.0
+pyodbc
+requests

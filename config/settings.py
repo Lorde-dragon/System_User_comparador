@@ -18,6 +18,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "core",
     "syncapp",
+    "sincronizacao_user",
 ]
 
 MIDDLEWARE = [

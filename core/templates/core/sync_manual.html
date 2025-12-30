@@ -44,7 +44,7 @@
       <i class="bi bi-database-up text-warning me-2"></i>Atualizar Banco de Dados
     </h3>
     {% if user.is_staff or user.is_superuser %}
-    <a href="{% url 'dashboard' %}" class="btn btn-dark fw-semibold">
+    <a href="{% url 'core:dashboard' %}" class="btn btn-dark fw-semibold">
       <i class="bi bi-arrow-left-circle me-1"></i> Voltar
     </a>
     {% endif %}
